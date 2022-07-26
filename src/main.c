@@ -11,8 +11,8 @@ static void cleanup(void);
 int main(int argc, char **argv)
 {
 	int cursor = 1;
-	int width = 600;
-	int height = 600;
+	int width = 1080;
+	int height = 1080;
 	atexit(cleanup);
 	video_init(width, height, "Shader");
 	target = LoadRenderTexture(width, height);
