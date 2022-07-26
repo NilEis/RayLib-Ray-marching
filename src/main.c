@@ -17,8 +17,12 @@ int main(int argc, char **argv)
 	video_init(width, height, "Shader");
 	target = LoadRenderTexture(width, height);
 	m_s = LoadShaderFromMemory(basic_shader_vs, basic_shader_fs);
+	int t_loc = GetShaderLocation(m_s, "t");
+	float t = 0;
 	while (!WindowShouldClose())
 	{
+		SetShaderValue(m_s, t_loc, &t, SHADER_UNIFORM_FLOAT);
+		t+=0.01;
 		if (cursor && IsCursorOnScreen())
 		{
 			HideCursor();
