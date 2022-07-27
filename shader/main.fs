@@ -1,16 +1,16 @@
 #version 400
-#define EPSILON 0.009
-#define FARPLANE 5.0
-#define MAX_MARCH_STEPS 500
 
 #define SCENE_INVALID (-1)
 #define SCENE_SPHERE 0
 #define SCENE_PLANE 1
 #define SCENE_MANDEL 2
 
-precision mediump float;
+precision lowp float;
 
 uniform float t;
+uniform float EPSILON = 0.0009;
+uniform float FARPLANE = 5.0;
+uniform int MAX_MARCH_STEPS = 250;
 
 // Input vertex attributes (from vertex shader)
 in vec2 fragTexCoord;
@@ -40,6 +40,7 @@ vec4 normal_to_rgb(vec3 v);
 vec3 sceneSDF(vec3 p);
 vec3 march(vec3 o, vec3 r);
 vec3 estimateNormal(vec3 p);
+float AmbientOcclusion(vec3 point, vec3 normal, float step_dist, float step_nbr);
 float sdf_sphere(vec3 p, int i);
 float sdf_plane(vec3 p, int i);
 float DE(vec3 pos);
@@ -149,61 +150,6 @@ float DE(vec3 pos) {
     }
     return 0.5 * log(r) * r / dr;
 }
-/*
-float DE(vec3 p) {
-    vec3 w = p;
-    float m = dot(w, w);
-
-    vec4 trap = vec4(abs(w), m);
-    float dz = 1.0;
-
-    for(int i = 0; i < 4; i++) {
-#if 0
-        // polynomial version (no trigonometrics, but MUCH slower)
-        float m2 = m * m;
-        float m4 = m2 * m2;
-        dz = 8.0 * sqrt(m4 * m2 * m) * dz + 1.0;
-
-        float x = w.x;
-        float x2 = x * x;
-        float x4 = x2 * x2;
-        float y = w.y;
-        float y2 = y * y;
-        float y4 = y2 * y2;
-        float z = w.z;
-        float z2 = z * z;
-        float z4 = z2 * z2;
-
-        float k3 = x2 + z2;
-        float k2 = inversesqrt(k3 * k3 * k3 * k3 * k3 * k3 * k3);
-        float k1 = x4 + y4 + z4 - 6.0 * y2 * z2 - 6.0 * x2 * y2 + 2.0 * z2 * x2;
-        float k4 = x2 - y2 + z2;
-
-        w.x = p.x + 64.0 * x * y * z * (x2 - z2) * k4 * (x4 - 6.0 * x2 * z2 + z4) * k1 * k2;
-        w.y = p.y + -16.0 * y2 * k3 * k4 * k4 + k1 * k1;
-        w.z = p.z + -8.0 * y * k4 * (x4 * x4 - 28.0 * x4 * x2 * z2 + 70.0 * x4 * z4 - 28.0 * x2 * z2 * z4 + z4 * z4) * k1 * k2;
-#else
-        // trigonometric version (MUCH faster than polynomial)
-
-        // dz = 8*z^7*dz
-        dz = 8.0 * pow(m, 3.5) * dz + 1.0;
-
-        // z = z^8+c
-        float r = length(w);
-        float b = 8.0 * acos(w.y / r);
-        float a = 8.0 * atan(w.x, w.z);
-        w = p + pow(r, 8.0) * vec3(sin(b) * sin(a), cos(b), sin(b) * cos(a));
-#endif        
-
-        trap = min(trap, vec4(abs(w), m));
-
-        m = dot(w, w);
-        if(m > 256.0)
-            break;
-    }
-    // distance estimation (through the Hubbard-Douady potential)
-    return 0.25 * log(m) * sqrt(m) / dz;
-}*/
 
 float AmbientOcclusion(vec3 point, vec3 normal, float step_dist, float step_nbr) {
     float occlusion = 1.0f;
@@ -233,5 +179,5 @@ vec4 get_color(vec3 m, vec3 ray) {
             obj_color = vec4(0.5, 0.26, 0.5, 1.0);
             break;
     }
-    return m.x < FARPLANE ? (obj_color * s + ambient)/* *pow(AmbientOcclusion(vec3(0.0, 0.0, -2.5)+m.x*ray,estimateNormal(vec3(0.0, 0.0, -2.5)+m.x * ray),0.015,20),40) */ : vec4(0, 0, 0, 1.0);
+    return m.x < FARPLANE ? (obj_color * pow(AmbientOcclusion(vec3(0.0, 0.0, -2.5)+m.x*ray,estimateNormal(vec3(0.0, 0.0, -2.5)+m.x * ray),0.015,20),40) + ambient)/* *pow(AmbientOcclusion(vec3(0.0, 0.0, -2.5)+m.x*ray,estimateNormal(vec3(0.0, 0.0, -2.5)+m.x * ray),0.015,20),40) */ : vec4(0, 0, 0, 1.0);
 }

@@ -19,10 +19,19 @@ int main(int argc, char **argv)
 	m_s = LoadShaderFromMemory(basic_shader_vs, basic_shader_fs);
 	int t_loc = GetShaderLocation(m_s, "t");
 	float t = 0;
+	int EPSILON_loc = GetShaderLocation(m_s, "EPSILON");
+	float EPSILON = 0;
+	int FARPLANE_loc = GetShaderLocation(m_s, "FARPLANE");
+	float FARPLANE = 0;
+	int MAX_MARCH_STEPS_loc = GetShaderLocation(m_s, "MAX_MARCH_STEPS");
+	float MAX_MARCH_STEPS = 0;
 	while (!WindowShouldClose())
 	{
 		SetShaderValue(m_s, t_loc, &t, SHADER_UNIFORM_FLOAT);
-		t+=0.01;
+		SetShaderValue(m_s, EPSILON_loc, &EPSILON, SHADER_UNIFORM_FLOAT);
+		SetShaderValue(m_s, FARPLANE_loc, &FARPLANE, SHADER_UNIFORM_FLOAT);
+		SetShaderValue(m_s, MAX_MARCH_STEPS_loc, &MAX_MARCH_STEPS, SHADER_UNIFORM_INT);
+		t += 0.01;
 		if (cursor && IsCursorOnScreen())
 		{
 			HideCursor();
