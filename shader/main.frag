@@ -60,7 +60,7 @@ void main() {
     sun = vec3(sin(t) * -1.5, 1.0, cos(t));
     float rand = 0.0001;
     vec3 ray = normalize(vec3((fragTexCoord.x * 2.0) - 1.0, (fragTexCoord.y * 2.0) - 1.0, 2.0));
-    Hit m = march(vec3(0.0, 0.0, 0.0), ray);
+    Hit m = march(vec3(0.0, 0.0, -2.25), ray);
     vec4 color = gamma_correct(get_color(m));
     /*ray = normalize(vec3((fragTexCoord.x * 2.0) - 1.0 + rand, (fragTexCoord.y * 2.0) - 1.0, 2.0));
     m = march(vec3(0.0), ray);
@@ -86,6 +86,7 @@ vec3 sceneSDF(vec3 p) {
     float d = 0;
     int last_i = -1;
     int type = SCENE_INVALID;
+    /*
     for(int i = 0; i < spheres_size; i++) {
         d = sdf_sphere(p, i);
         min = float(d < min) * d + float(min <= d) * min;
@@ -98,11 +99,11 @@ vec3 sceneSDF(vec3 p) {
         last_i = int(d < EPSILON) * i + int(EPSILON <= d) * last_i;
         type = int(d < EPSILON) * SCENE_PLANE + int(EPSILON <= d) * type;
     }
-    /*
+    */
     d = DE(p);
     min = float(d < min) * d + float(min <= d) * min;
     type = int(d < EPSILON) * SCENE_MANDEL + int(EPSILON <= d) * type;
-    */
+    
     return vec3(min, last_i, type);
 }
 
