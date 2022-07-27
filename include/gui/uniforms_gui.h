@@ -1,13 +1,14 @@
 /*******************************************************************************************
 *
-*   UniformsLayout v1.0.0 - Gui for uniforms
+*   UniformsGui v1.0.0 - Tool description
+*   The gui to change the uniforms
 *
 *   MODULE USAGE:
-*       #define GUI_UNIFORMS_LAYOUT_IMPLEMENTATION
-*       #include "gui_uniforms_layout.h"
+*       #define GUI_UNIFORMS_GUI_IMPLEMENTATION
+*       #include "gui_uniforms_gui.h"
 *
-*       INIT: GuiUniformsLayoutState state = InitGuiUniformsLayout();
-*       DRAW: GuiUniformsLayout(&state);
+*       INIT: uniforms_gui_state_t state = uniforms_gui_init();
+*       DRAW: uniforms_gui_draw(&state);
 *
 *   LICENSE: Propietary License
 *
@@ -25,63 +26,66 @@
 #undef RAYGUI_IMPLEMENTATION
 #include "raygui.h"
 
-#ifndef GUI_UNIFORMS_LAYOUT_H
-#define GUI_UNIFORMS_LAYOUT_H
+#ifndef GUI_UNIFORMS_GUI_H
+#define GUI_UNIFORMS_GUI_H
 
-typedef struct {
+typedef struct
+{
     // Define anchors
-    Vector2 anchor01;            // ANCHOR ID:1
-    
+    Vector2 anchor01; // ANCHOR ID:1
+
     // Define controls variables
-    bool WindowBox000Active;            // WindowBox: WindowBox000
+    bool uniforms_boxActive; // WindowBox: uniforms_box
     bool epsilon_inEditMode;
-    float epsilon_inValue;            // Spinner: epsilon_in
+    char epsilon_inText[128]; // TextBox: epsilon_in
     bool farplane_inEditMode;
-    float farplane_inValue;            // Spinner: farplane_in
+    char farplane_inText[128]; // TextBox: farplane_in
     bool max_steps_inEditMode;
-    int max_steps_inValue;            // Spinner: max_steps_in
+    char max_steps_inText[128]; // TextBox: max_steps_in
 
     // Define rectangles
-    Rectangle layoutRecs[6];
+    Rectangle layoutRecs[11];
 
     // Custom state variables (depend on development software)
     // NOTE: This variables should be added manually if required
+    bool update;
 
-} GuiUniformsLayoutState;
+} uniforms_gui_state_t;
 
 #ifdef __cplusplus
-extern "C" {            // Prevents name mangling of functions
+extern "C"
+{ // Prevents name mangling of functions
 #endif
 
-//----------------------------------------------------------------------------------
-// Defines and Macros
-//----------------------------------------------------------------------------------
-//...
+    //----------------------------------------------------------------------------------
+    // Defines and Macros
+    //----------------------------------------------------------------------------------
+    //...
 
-//----------------------------------------------------------------------------------
-// Types and Structures Definition
-//----------------------------------------------------------------------------------
-// ...
+    //----------------------------------------------------------------------------------
+    // Types and Structures Definition
+    //----------------------------------------------------------------------------------
+    // ...
 
-//----------------------------------------------------------------------------------
-// Module Functions Declaration
-//----------------------------------------------------------------------------------
-GuiUniformsLayoutState InitGuiUniformsLayout(void);
-void GuiUniformsLayout(GuiUniformsLayoutState *state);
-
+    //----------------------------------------------------------------------------------
+    // Module Functions Declaration
+    //----------------------------------------------------------------------------------
+    uniforms_gui_state_t uniforms_gui_init(void);
+    void uniforms_gui_draw(uniforms_gui_state_t *state);
+    static void UpdateButton(); // Button: update_button logic
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif // GUI_UNIFORMS_LAYOUT_H
+#endif // GUI_UNIFORMS_GUI_H
 
 /***********************************************************************************
 *
-*   GUI_UNIFORMS_LAYOUT IMPLEMENTATION
+*   GUI_UNIFORMS_GUI IMPLEMENTATION
 *
 ************************************************************************************/
-#if defined(GUI_UNIFORMS_LAYOUT_IMPLEMENTATION)
+#if defined(GUI_UNIFORMS_IMPLEMENTATION)
 
 #include "raygui.h"
 
@@ -98,51 +102,69 @@ void GuiUniformsLayout(GuiUniformsLayoutState *state);
 //----------------------------------------------------------------------------------
 // Module Functions Definition
 //----------------------------------------------------------------------------------
-GuiUniformsLayoutState InitGuiUniformsLayout(void)
+uniforms_gui_state_t uniforms_gui_init(void)
 {
-    GuiUniformsLayoutState state = { 0 };
+    uniforms_gui_state_t state = {0};
 
     // Init anchors
-    state.anchor01 = (Vector2){ 50, 96 };            // ANCHOR ID:1
-    
+    state.anchor01 = (Vector2){25, 50}; // ANCHOR ID:1
+
     // Initilize controls variables
-    state.WindowBox000Active = true;            // WindowBox: WindowBox000
+    state.uniforms_boxActive = true; // WindowBox: uniforms_box
     state.epsilon_inEditMode = false;
-    state.epsilon_inValue = 0.0009;            // Spinner: epsilon_in
+    strcpy(state.epsilon_inText, "0.009"); // TextBox: epsilon_in
     state.farplane_inEditMode = false;
-    state.farplane_inValue = 150;            // Spinner: farplane_in
+    strcpy(state.farplane_inText, "150.0"); // TextBox: farplane_in
     state.max_steps_inEditMode = false;
-    state.max_steps_inValue = 250;            // Spinner: max_steps_in
+    strcpy(state.max_steps_inText, "250"); // TextBox: max_steps_in
 
     // Init controls rectangles
-    state.layoutRecs[0] = (Rectangle){ state.anchor01.x + 0, state.anchor01.y + 0, 168, 120 };// WindowBox: WindowBox000
-    state.layoutRecs[1] = (Rectangle){ state.anchor01.x + 60, state.anchor01.y + 30, 94, 20 };// Spinner: epsilon_in
-    state.layoutRecs[2] = (Rectangle){ state.anchor01.x + 60, state.anchor01.y + 60, 94, 20 };// Spinner: farplane_in
-    state.layoutRecs[3] = (Rectangle){ state.anchor01.x + 60, state.anchor01.y + 90, 94, 20 };// Spinner: max_steps_in
-    state.layoutRecs[4] = (Rectangle){ state.anchor01.x + 1, state.anchor01.y + 50, 168, 10 };// Line: Line004
-    state.layoutRecs[5] = (Rectangle){ state.anchor01.x + 0, state.anchor01.y + 80, 168, 10 };// Line: Line005
+    state.layoutRecs[0] = (Rectangle){state.anchor01.x + 0, state.anchor01.y + 0, 167, 192};   // WindowBox: uniforms_box
+    state.layoutRecs[1] = (Rectangle){state.anchor01.x + 1, state.anchor01.y + 24, 96, 24};    // Label: epsilon_label
+    state.layoutRecs[2] = (Rectangle){state.anchor01.x + 1, state.anchor01.y + 47, 165, 24};   // Line: Line002
+    state.layoutRecs[3] = (Rectangle){state.anchor01.x + 95, state.anchor01.y + 24, 71, 24};   // TextBox: epsilon_in
+    state.layoutRecs[4] = (Rectangle){state.anchor01.x + 1, state.anchor01.y + 95, 165, 24};   // Line: Line004
+    state.layoutRecs[5] = (Rectangle){state.anchor01.x + 1, state.anchor01.y + 71, 96, 24};    // Label: farplane_label
+    state.layoutRecs[6] = (Rectangle){state.anchor01.x + 96, state.anchor01.y + 71, 71, 24};   // TextBox: farplane_in
+    state.layoutRecs[7] = (Rectangle){state.anchor01.x + 1, state.anchor01.y + 119, 96, 24};   // Label: max_steps_label
+    state.layoutRecs[8] = (Rectangle){state.anchor01.x + 95, state.anchor01.y + 119, 71, 24};  // TextBox: max_steps_in
+    state.layoutRecs[9] = (Rectangle){state.anchor01.x + 1, state.anchor01.y + 144, 165, 24};  // Line: Line009
+    state.layoutRecs[10] = (Rectangle){state.anchor01.x + 1, state.anchor01.y + 168, 168, 24}; // Button: update_button
 
     // Custom variables initialization
+    state.update = false;
 
     return state;
 }
 
-
-void GuiUniformsLayout(GuiUniformsLayoutState *state)
+void uniforms_gui_draw(uniforms_gui_state_t *state)
 {
     // Const text
-    const char *WindowBox000Text = "Uniforms";    // WINDOWBOX: WindowBox000
-    
+    const char *uniforms_boxText = "Uniforms";     // WINDOWBOX: uniforms_box
+    const char *epsilon_labelText = " Epsilon";    // LABEL: epsilon_label
+    const char *farplane_labelText = "Farplane";   // LABEL: farplane_label
+    const char *max_steps_labelText = "Max steps"; // LABEL: max_steps_label
+    const char *update_buttonText = "Update";      // BUTTON: update_button
+
     // Draw controls
-    if (state->WindowBox000Active)
+    if (state->uniforms_boxActive)
     {
-        state->WindowBox000Active = !GuiWindowBox(state->layoutRecs[0], WindowBox000Text);
-        if (GuiSpinner(state->layoutRecs[1], "epsilon", &state->epsilon_inValue, 0, 100, state->epsilon_inEditMode)) state->epsilon_inEditMode = !state->epsilon_inEditMode;
-        if (GuiSpinner(state->layoutRecs[2], "farplane", &state->farplane_inValue, 0, 100, state->farplane_inEditMode)) state->farplane_inEditMode = !state->farplane_inEditMode;
-        if (GuiSpinner(state->layoutRecs[3], "max_steps", &state->max_steps_inValue, 0, 100, state->max_steps_inEditMode)) state->max_steps_inEditMode = !state->max_steps_inEditMode;
+        state->uniforms_boxActive = !GuiWindowBox(state->layoutRecs[0], uniforms_boxText);
+        GuiLabel(state->layoutRecs[1], epsilon_labelText);
+        GuiLine(state->layoutRecs[2], NULL);
+        if (GuiTextBox(state->layoutRecs[3], state->epsilon_inText, 128, state->epsilon_inEditMode))
+            state->epsilon_inEditMode = !state->epsilon_inEditMode;
         GuiLine(state->layoutRecs[4], NULL);
-        GuiLine(state->layoutRecs[5], NULL);
+        GuiLabel(state->layoutRecs[5], farplane_labelText);
+        if (GuiTextBox(state->layoutRecs[6], state->farplane_inText, 128, state->farplane_inEditMode))
+            state->farplane_inEditMode = !state->farplane_inEditMode;
+        GuiLabel(state->layoutRecs[7], max_steps_labelText);
+        if (GuiTextBox(state->layoutRecs[8], state->max_steps_inText, 128, state->max_steps_inEditMode))
+            state->max_steps_inEditMode = !state->max_steps_inEditMode;
+        GuiLine(state->layoutRecs[9], NULL);
+        if (GuiButton(state->layoutRecs[10], update_buttonText))
+            state->update = true;
     }
 }
 
-#endif // GUI_UNIFORMS_LAYOUT_IMPLEMENTATION
+#endif // GUI_UNIFORMS_GUI_IMPLEMENTATION

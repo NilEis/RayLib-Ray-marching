@@ -7,7 +7,7 @@
 #include "raylib.h"
 #define RAYGUI_IMPLEMENTATION
 #include "raygui.h"
-#define GUI_UNIFORMS_LAYOUT_IMPLEMENTATION
+#define GUI_UNIFORMS_IMPLEMENTATION
 #include "gui/uniforms_gui.h"
 
 RenderTexture2D target;
@@ -24,18 +24,25 @@ int main(int argc, char **argv)
 	int t_loc = GetShaderLocation(m_s, "t");
 	float t = 0;
 	int EPSILON_loc = GetShaderLocation(m_s, "EPSILON");
-	float EPSILON = 0.0009;
+	float EPSILON = 0.09;
 	int FARPLANE_loc = GetShaderLocation(m_s, "FARPLANE");
 	float FARPLANE = 5.0;
 	int MAX_MARCH_STEPS_loc = GetShaderLocation(m_s, "MAX_MARCH_STEPS");
 	float MAX_MARCH_STEPS = 250;
-	GuiUniformsLayoutState state = InitGuiUniformsLayout();
+	uniforms_gui_state_t state = uniforms_gui_init();
 	while (!WindowShouldClose())
 	{
+		if (state.update == true)
+		{
+			EPSILON = strtof(state.epsilon_inText, NULL);
+			SetShaderValue(m_s, EPSILON_loc, &EPSILON, SHADER_UNIFORM_FLOAT);
+			FARPLANE = strtof(state.farplane_inText, NULL);
+			SetShaderValue(m_s, FARPLANE_loc, &FARPLANE, SHADER_UNIFORM_FLOAT);
+			MAX_MARCH_STEPS = (int)strtol(state.max_steps_inText, NULL, 10);
+			SetShaderValue(m_s, MAX_MARCH_STEPS_loc, &MAX_MARCH_STEPS, SHADER_UNIFORM_INT);
+			state.update = false;
+		}
 		SetShaderValue(m_s, t_loc, &t, SHADER_UNIFORM_FLOAT);
-		SetShaderValue(m_s, EPSILON_loc, &EPSILON, SHADER_UNIFORM_FLOAT);
-		SetShaderValue(m_s, FARPLANE_loc, &FARPLANE, SHADER_UNIFORM_FLOAT);
-		SetShaderValue(m_s, MAX_MARCH_STEPS_loc, &MAX_MARCH_STEPS, SHADER_UNIFORM_INT);
 		t += 0.01;
 		BeginTextureMode(target);
 		{
@@ -50,7 +57,7 @@ int main(int argc, char **argv)
 				DrawTexturePro(target.texture, (Rectangle){0, 0, (float)target.texture.width, (float)-target.texture.height}, (Rectangle){0, 0, (float)GetScreenWidth(), (float)GetScreenHeight()}, (Vector2){0, 0}, 0.0, WHITE);
 			}
 			EndShaderMode();
-			GuiUniformsLayout(&state);
+			uniforms_gui_draw(&state);
 			DrawFPS(10, 10);
 		}
 		EndDrawing();

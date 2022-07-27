@@ -9,7 +9,7 @@ precision lowp float;
 
 uniform float t;
 uniform float EPSILON = 0.0009;
-uniform float FARPLANE = 5.0;
+uniform float FARPLANE = 15.0;
 uniform int MAX_MARCH_STEPS = 250;
 
 // Input vertex attributes (from vertex shader)
@@ -27,31 +27,41 @@ struct Plane {
     vec4 c;
 };
 
-const int spheres_size = 0;
-Sphere spheres[spheres_size + 1] = Sphere[spheres_size + 1] (Sphere(vec3(0.0, 0.0, 5), 2.0, vec4(1.0, 0.0, 0.5, 1.0)));
+struct Hit {
+    float d;
+    int iterations;
+    int index;
+    int type;
+    vec3 point;
+    vec3 normal;
+} m_hit;
 
-const int planes_size = 0;
-Plane planes[planes_size + 1] = Plane[planes_size + 1] (Plane(vec3(-0.20, 1.0, 0.20), vec3(0.0, 0, 0.0), vec4(0.25, 0.25, 0.25, 1.0)));
+const int spheres_size = 1;
+Sphere spheres[spheres_size] = Sphere[spheres_size] (Sphere(vec3(0.0, 0.0, 5), 2.0, vec4(1.0, 0.0, 0.5, 1.0)));
+
+const int planes_size = 1;
+Plane planes[planes_size] = Plane[planes_size] (Plane(vec3(0.0, 1.0, 0.0), vec3(0.0, -1.0, 0.0), vec4(0.25, 0.25, 0.25, 1.0)));
 
 vec3 sun = vec3(-1.5, 1.0, 0.0);
 const vec4 ambient = vec4(0.25);
 
 vec4 normal_to_rgb(vec3 v);
 vec3 sceneSDF(vec3 p);
-vec3 march(vec3 o, vec3 r);
+Hit march(vec3 o, vec3 r);
 vec3 estimateNormal(vec3 p);
 float AmbientOcclusion(vec3 point, vec3 normal, float step_dist, float step_nbr);
 float sdf_sphere(vec3 p, int i);
 float sdf_plane(vec3 p, int i);
 float DE(vec3 pos);
-vec4 get_color(vec3 m, vec3 ray);
+vec4 get_color(Hit m);
+vec4 gamma_correct(vec4 c);
 
 void main() {
     sun = vec3(sin(t) * -1.5, 1.0, cos(t));
     float rand = 0.0001;
     vec3 ray = normalize(vec3((fragTexCoord.x * 2.0) - 1.0, (fragTexCoord.y * 2.0) - 1.0, 2.0));
-    vec3 m = march(vec3(0.0, 0.0, -2.5), ray);
-    vec4 color = get_color(m, ray);
+    Hit m = march(vec3(0.0, 0.0, 0.0), ray);
+    vec4 color = gamma_correct(get_color(m));
     /*ray = normalize(vec3((fragTexCoord.x * 2.0) - 1.0 + rand, (fragTexCoord.y * 2.0) - 1.0, 2.0));
     m = march(vec3(0.0), ray);
     color += get_color(m, ray);
@@ -88,26 +98,28 @@ vec3 sceneSDF(vec3 p) {
         last_i = int(d < EPSILON) * i + int(EPSILON <= d) * last_i;
         type = int(d < EPSILON) * SCENE_PLANE + int(EPSILON <= d) * type;
     }
+    /*
     d = DE(p);
     min = float(d < min) * d + float(min <= d) * min;
     type = int(d < EPSILON) * SCENE_MANDEL + int(EPSILON <= d) * type;
+    */
     return vec3(min, last_i, type);
 }
 
-vec3 march(vec3 o, vec3 r) {
+Hit march(vec3 o, vec3 r) {
     float d = 1;
     for(int i = 0; i < MAX_MARCH_STEPS; i++) {
         vec3 sdf = sceneSDF(o + (d * r));
         float dist = sdf.x;
         if(dist < EPSILON) {
-            return vec3(d, sdf.y, sdf.z);
+            return Hit(d, i, int(sdf.y), int(sdf.z), o + d * r, estimateNormal(o + d * r));
         }
         d += dist;
         if(d >= FARPLANE) {
-            return vec3(FARPLANE, -1, SCENE_INVALID);
+            return Hit(FARPLANE, i, -1, SCENE_INVALID, o + FARPLANE * r, estimateNormal(o + FARPLANE * r));
         }
     }
-    return vec3(FARPLANE, -1, SCENE_INVALID);
+    return Hit(FARPLANE, -1, MAX_MARCH_STEPS - 1, SCENE_INVALID, o + FARPLANE * r, estimateNormal(o + FARPLANE * r));
 }
 
 vec3 estimateNormal(vec3 p) {
@@ -161,23 +173,27 @@ float AmbientOcclusion(vec3 point, vec3 normal, float step_dist, float step_nbr)
     return occlusion;
 }
 
-vec4 get_color(vec3 m, vec3 ray) {
-    vec4 obj_color = vec4(0.9, 0, 1, 1);
-    float s = (max(dot(estimateNormal(vec3(0.0, 0.0, -2.5)+m.x * ray), sun), 0));
+vec4 gamma_correct(vec4 c) {
+    return c;//vec4(pow(c.xyz, vec3(1.0 / 2.2)), 1.0);
+}
 
-    switch(int(m.z)) {
+vec4 get_color(Hit m) {
+    vec4 obj_color = vec4(0.9, 0, 1, 1);
+    float s = min(max(dot(m.normal, sun), 0), 1.0);
+    float ambient_occlusion = min(pow(AmbientOcclusion(m.point, m.normal, 0.015, 20), 40), 1.0);
+    switch(m.type) {
         case SCENE_INVALID:
             obj_color = vec4(0.25);
             break;
         case SCENE_SPHERE:
-            obj_color = spheres[int(m.y)].c;
+            obj_color = spheres[m.index].c;
             break;
         case SCENE_PLANE:
-            obj_color = planes[int(m.y)].c;
+            obj_color = planes[m.index].c;
             break;
         case SCENE_MANDEL:
             obj_color = vec4(0.5, 0.26, 0.5, 1.0);
             break;
     }
-    return m.x < FARPLANE ? (obj_color * pow(AmbientOcclusion(vec3(0.0, 0.0, -2.5)+m.x*ray,estimateNormal(vec3(0.0, 0.0, -2.5)+m.x * ray),0.015,20),40) + ambient)/* *pow(AmbientOcclusion(vec3(0.0, 0.0, -2.5)+m.x*ray,estimateNormal(vec3(0.0, 0.0, -2.5)+m.x * ray),0.015,20),40) */ : vec4(0, 0, 0, 1.0);
+    return m.d < FARPLANE ? (obj_color * s + ambient) * ambient_occlusion : vec4(0.0, 0.0, 0.0, 1.0);
 }
