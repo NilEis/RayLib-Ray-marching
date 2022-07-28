@@ -8,9 +8,7 @@ if (EMSCRIPTEN)
   set(CMAKE_EXECUTABLE_SUFFIX ".html") # This line is used to set your executable to build with the emscripten html template so taht you can directly open it.
 endif ()
 
-set(BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
 add_subdirectory(extern/raylib)
-set(BUILD_RAYGUI_EXAMPLES OFF CACHE BOOL "" FORCE)
 add_subdirectory(extern/raygui/projects/CMake)
 add_subdirectory(src/audio)
 add_subdirectory(src/video)

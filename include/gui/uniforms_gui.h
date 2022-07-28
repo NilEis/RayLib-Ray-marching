@@ -107,12 +107,12 @@ uniforms_gui_state_t uniforms_gui_init(void)
     uniforms_gui_state_t state = {0};
 
     // Init anchors
-    state.anchor01 = (Vector2){25, 50}; // ANCHOR ID:1
+    state.anchor01 = (Vector2){5, 100}; // ANCHOR ID:1
 
     // Initilize controls variables
     state.uniforms_boxActive = true; // WindowBox: uniforms_box
     state.epsilon_inEditMode = false;
-    strcpy(state.epsilon_inText, "0.009"); // TextBox: epsilon_in
+    strcpy(state.epsilon_inText, "0.001"); // TextBox: epsilon_in
     state.farplane_inEditMode = false;
     strcpy(state.farplane_inText, "150.0"); // TextBox: farplane_in
     state.max_steps_inEditMode = false;
