@@ -32,13 +32,11 @@ struct Plane {
 
 struct Hit {
     float d;
-    int iterations;
     int index;
     int type;
     vec3 point;
     vec3 normal;
-    vec3 color;
-} m_hit;
+};
 
 const int spheres_size = 1;
 Sphere spheres[spheres_size] = Sphere[spheres_size] (Sphere(vec3(0.0, 0.0, 5), 2.0, vec3(1.0, 0.0, 0.5)));
@@ -49,7 +47,7 @@ Plane planes[planes_size] = Plane[planes_size] (Plane(vec3(0.0, 1.0, 0.0), vec3(
 vec3 sun = vec3(-1.5, 1.0, 0.0);
 const vec3 ambient = vec3(0.25);
 
-vec4 normal_to_rgb(vec3 v);
+vec3 normal_to_rgb(vec3 v);
 vec3 sceneSDF(vec3 p);
 vec3 march(vec3 o, vec3 r, int iter);
 vec3 estimateNormal(vec3 p);
@@ -62,11 +60,12 @@ vec3 gamma_correct(vec3 c);
 
 void main() {
     sun = vec3(sin(t) * -1.5, 1.0, cos(t));
-    float rand = 0.0001;
     vec3 ray = normalize(view + vec3((fragTexCoord.x * 2.0) - 1.0, (fragTexCoord.y * 2.0) - 1.0, 1));
-    vec3 m = march(pos, ray, 1);
+    vec3 m = vec3(0.0);
+    m = march(pos, ray, 1);
     vec4 color = vec4(m, 1.0);
-    /*ray = normalize(vec3((fragTexCoord.x * 2.0) - 1.0 + rand, (fragTexCoord.y * 2.0) - 1.0, 2.0));
+    /*float rand = 0.0001;
+    ray = normalize(vec3((fragTexCoord.x * 2.0) - 1.0 + rand, (fragTexCoord.y * 2.0) - 1.0, 2.0));
     m = march(vec3(0.0), ray);
     color += get_color(m, ray);
     ray = normalize(vec3((fragTexCoord.x * 2.0) - 1.0 - rand, (fragTexCoord.y * 2.0) - 1.0, 2.0));
@@ -81,8 +80,8 @@ void main() {
     gl_FragColor = color;
 }
 
-vec4 normal_to_rgb(vec3 v) {
-    return vec4(normalize(v), 1.0);
+vec3 normal_to_rgb(vec3 v) {
+    return normalize(v);
 }
 
 vec3 sceneSDF(vec3 p) {
@@ -114,25 +113,26 @@ vec3 sceneSDF(vec3 p) {
 vec3 march(vec3 o, vec3 r, int iter) {
     vec3 origin = vec3(o);
     vec3 ray_dir = vec3(r);
-    vec3 acc = vec3(0.0);
+    vec3 acc = vec3(0.0, 0.0, 0.0);
     float d;
+    Hit m;
     d = 1;
     for(int i = 0; i < MAX_MARCH_STEPS; i++) {
         vec3 sdf = sceneSDF(origin + (d * ray_dir));
         float dist = sdf.x;
         if(dist < EPSILON) {
-            acc += 0.3 * get_color(Hit(d, i, int(sdf.y), int(sdf.z), origin + d * ray_dir, estimateNormal(origin + d * ray_dir), acc));
+            m = Hit(d, int(sdf.y), int(sdf.z), origin + d * ray_dir, estimateNormal(origin + d * ray_dir));
+            acc = acc + get_color(m);
             origin = origin + d * ray_dir;
         }
         d += dist;
         if(d >= FARPLANE) {
-            acc += 0.3 * get_color(Hit(d, i, -1, SCENE_INVALID, origin + d * ray_dir, estimateNormal(origin + d * ray_dir), acc));
+            m = Hit(d, -1, SCENE_INVALID, origin + d * ray_dir, estimateNormal(origin + d * ray_dir));
+            acc = acc + get_color(m);
         }
     }
-    acc = acc / (acc + vec3(1.0));
-    float gamma = 1.1;
-    acc = pow(acc, vec3(1.0 / gamma));
-    return acc;
+    acc = gamma_correct(acc);
+    return 1.0*acc;
 }
 
 vec3 estimateNormal(vec3 p) {
@@ -187,13 +187,16 @@ float AmbientOcclusion(vec3 point, vec3 normal, float step_dist, float step_nbr)
 }
 
 vec3 gamma_correct(vec3 c) {
-    return c;//vec4(pow(c.xyz, vec3(1.0 / 2.2)), 1.0);
+    return vec3(pow(c, vec3(1.0 / 2.2)));
 }
 
 vec3 get_color(Hit m) {
-    vec3 obj_color = vec3(0.9, 0, 1);
-    float s = min(max(dot(m.normal, sun), 0), 1.0);
-    float ambient_occlusion = min(pow(AmbientOcclusion(m.point, m.normal, 0.015, 20), 40), 1.0);
+    vec3 obj_color = vec3(0.9, 0.0, 1.0);
+    float s = min(max(dot(m.normal, sun), 0.0), 1.0);
+    float ambient_occlusion = min(pow(AmbientOcclusion(m.point, m.normal, 0.015, 20.0), 40.0), 1.0);
+    if(m.index < 0) {
+        m.type = SCENE_INVALID;
+    }
     switch(m.type) {
         case SCENE_INVALID:
             obj_color = vec3(0.25);
@@ -208,5 +211,5 @@ vec3 get_color(Hit m) {
             obj_color = vec3(0.5, 0.26, 0.5);
             break;
     }
-    return m.d < FARPLANE ? (obj_color * s + ambient) * ambient_occlusion : vec3(0.0, 0.0, 0.0);
+    return m.d < FARPLANE ? (obj_color * s + ambient) * ambient_occlusion : vec3(0.0);
 }
