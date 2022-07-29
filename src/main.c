@@ -61,6 +61,7 @@ int main(int argc, char **argv)
 	state.update = true;
 	while (!WindowShouldClose())
 	{
+		printf("In while loop\n");
 		if (state.update == true)
 		{
 			uniforms.EPSILON_u = strtof(state.epsilon_inText, NULL);
@@ -84,8 +85,7 @@ int main(int argc, char **argv)
 			ClearBackground(BLACK);
 			BeginShaderMode(m_s);
 			{
-				DrawRectangle(0, 0, (float)GetScreenWidth(), (float)GetScreenHeight(),RAYWHITE);
-				//DrawTexturePro(target.texture, (Rectangle){0, 0, (float)target.texture.width, (float)-target.texture.height}, (Rectangle){0, 0, (float)GetScreenWidth(), (float)GetScreenHeight()}, (Vector2){0, 0}, 0.0, WHITE);
+				DrawRectangle(0, 0, (float)GetScreenWidth(), (float)GetScreenHeight(), RAYWHITE);
 			}
 			EndShaderMode();
 			uniforms_gui_draw(&state);

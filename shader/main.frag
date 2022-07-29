@@ -111,14 +111,14 @@ vec3 sceneSDF(vec3 p) {
 }
 
 vec3 march(vec3 o, vec3 r, int iter) {
-    vec3 origin = vec3(o);
-    vec3 ray_dir = vec3(r);
+    vec3 origin = o;
+    vec3 ray_dir = r;
     vec3 acc = vec3(0.0, 0.0, 0.0);
     float d;
     Hit m;
     d = 1;
     for(int i = 0; i < MAX_MARCH_STEPS; i++) {
-        vec3 sdf = sceneSDF(origin + (d * ray_dir));
+        vec3 sdf = sceneSDF(origin + d * ray_dir);
         float dist = sdf.x;
         if(dist < EPSILON) {
             m = Hit(d, int(sdf.y), int(sdf.z), origin + d * ray_dir, estimateNormal(origin + d * ray_dir));
