@@ -85,7 +85,7 @@ int main(int argc, char **argv)
 			ClearBackground(BLACK);
 			BeginShaderMode(m_s);
 			{
-				DrawRectangle(0, 0, (float)GetScreenWidth(), (float)GetScreenHeight(), RAYWHITE);
+				DrawTexturePro(target.texture, (Rectangle){0, 0, (float)target.texture.width, (float)-target.texture.height}, (Rectangle){0, 0, (float)GetScreenWidth(), (float)GetScreenHeight()}, (Vector2){0, 0}, 0.0, WHITE);
 			}
 			EndShaderMode();
 			uniforms_gui_draw(&state);
