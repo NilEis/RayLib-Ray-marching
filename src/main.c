@@ -61,7 +61,7 @@ int main(int argc, char **argv)
 	state.update = true;
 	while (!WindowShouldClose())
 	{
-		printf("In while loop\n");
+		printf("In main loop\n");
 		if (state.update == true)
 		{
 			uniforms.EPSILON_u = strtof(state.epsilon_inText, NULL);
