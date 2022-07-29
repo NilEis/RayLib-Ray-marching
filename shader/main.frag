@@ -54,7 +54,7 @@ vec3 estimateNormal(vec3 p);
 float AmbientOcclusion(vec3 point, vec3 normal, float step_dist, float step_nbr);
 float sdf_sphere(vec3 p, int i);
 float sdf_plane(vec3 p, int i);
-float DE(vec3 pos);
+float sdf_mandelbulb(vec3 pos);
 vec3 get_color(Hit m);
 vec3 gamma_correct(vec3 c);
 
@@ -156,7 +156,7 @@ float sdf_plane(vec3 p, int i) {
     return dot(normalize(planes[i].normal), p - planes[i].p);
 }
 
-float DE(vec3 pos) {
+float sdf_mandelbulb(vec3 pos) {
     const int Iterations = 10;
     const float Bailout = 1.25;
     const float Power = 4;
