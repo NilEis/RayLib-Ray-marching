@@ -191,7 +191,6 @@ float AmbientOcclusion(vec3 point, vec3 normal, float step_dist, float step_nbr)
         occlusion -= pow(step_nbr * step_dist - (sceneSDF(point + normal * step_nbr * step_dist)).x, 2) / step_nbr;
         step_nbr--;
     }
-
     return occlusion;
 }
 
@@ -200,6 +199,9 @@ vec3 gamma_correct(vec3 c) {
 }
 
 vec3 get_color(Hit m) {
+    if(m.d < FARPLANE) {
+        return vec3(0.0);
+    }
     vec3 obj_color = vec3(0.9, 0.0, 1.0);
     float s = min(max(dot(m.normal, sun), 0.0), 1.0);
     float ambient_occlusion = min(pow(AmbientOcclusion(m.point, m.normal, 0.015, 20.0), 40.0), 1.0);
@@ -220,5 +222,5 @@ vec3 get_color(Hit m) {
             obj_color = vec3(0.5, 0.26, 0.5);
             break;
     }
-    return m.d < FARPLANE ? (obj_color * s + ambient) * ambient_occlusion : vec3(0.0);
+    return (obj_color * s + ambient) * ambient_occlusion;
 }
