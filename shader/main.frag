@@ -122,17 +122,26 @@ vec3 march(vec3 o, vec3 r, int iter) {
         float dist = sdf.x;
         if(dist < EPSILON) {
             m = Hit(d, int(sdf.y), int(sdf.z), origin + d * ray_dir, estimateNormal(origin + d * ray_dir));
-            acc = acc + get_color(m);
+            if(i == 0) {
+                acc = acc + get_color(m);
+            } else {
+                acc = acc + 0.3 * get_color(m);
+            }
             origin = origin + d * ray_dir;
         }
         d += dist;
         if(d >= FARPLANE) {
-            m = Hit(d, -1, SCENE_INVALID, origin + d * ray_dir, estimateNormal(origin + d * ray_dir));
-            acc = acc + get_color(m);
+            m = Hit(d, -1, SCENE_INVALID, vec3(0.0), vec3(0.0));
+            if(i == 0) {
+                acc = acc + get_color(m);
+            } else {
+                acc = acc + 0.3 * get_color(m);
+            }
         }
     }
+    acc = acc / (acc + vec3(1.0));
     acc = gamma_correct(acc);
-    return 1.0*acc;
+    return acc;
 }
 
 vec3 estimateNormal(vec3 p) {
