@@ -72,9 +72,10 @@ void main() {
     vec3 ray = normalize(vec3((fragTexCoord.x * 2.0) - 1.0, (fragTexCoord.y * 2.0) - 1.0, 2.0));
     Hit m = march(pos, ray);
     vec4 color = gamma_correct(get_color(m));
-    for(int i = 0; i < 0; i++) {
+    for(int i = 0; i < 1; i++) {
         if(m.type != SCENE_INVALID) {
-            color = mix(color, gamma_correct(get_color(march(m.point, m.normal))), 0.3);
+            ray = reflect(ray,m.normal);
+            color = mix(color, gamma_correct(get_color(march(m.point, ray))), 0.3);
         } else {
             break;
         }
@@ -188,7 +189,7 @@ vec4 get_color(Hit m) {
     }
     vec4 obj_color = vec4(0.9, 0, 1, 1);
     float s = min(max(dot(m.normal, sun), 0), 1.0);
-    float ambient_occlusion = pow(AmbientOcclusion(m.point, m.normal, 0.015, 15), 1);
+    float ambient_occlusion = pow(AmbientOcclusion(m.point, m.normal, 0.016, 15), 50);
     switch(m.type) {
         case SCENE_INVALID:
             obj_color = vec4(0.25);
