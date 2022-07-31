@@ -46,7 +46,7 @@ int main(int argc, char **argv)
 	uniforms.FARPLANE_loc = GetShaderLocation(m_s, "FARPLANE");
 	uniforms.FARPLANE_u = 5.0;
 	uniforms.MAX_MARCH_STEPS_loc = GetShaderLocation(m_s, "MAX_MARCH_STEPS");
-	uniforms.MAX_MARCH_STEPS_u = 250;
+	uniforms.MAX_MARCH_STEPS_u = 10;
 	uniforms.pos_loc = GetShaderLocation(m_s, "pos");
 	uniforms.pos[0] = 0;
 	uniforms.pos[1] = 0;
@@ -61,7 +61,6 @@ int main(int argc, char **argv)
 	state.update = true;
 	while (!WindowShouldClose())
 	{
-		printf("In main loop\n");
 		if (state.update == true)
 		{
 			uniforms.EPSILON_u = strtof(state.epsilon_inText, NULL);

@@ -116,7 +116,7 @@ uniforms_gui_state_t uniforms_gui_init(void)
     state.farplane_inEditMode = false;
     strcpy(state.farplane_inText, "150.0"); // TextBox: farplane_in
     state.max_steps_inEditMode = false;
-    strcpy(state.max_steps_inText, "250"); // TextBox: max_steps_in
+    strcpy(state.max_steps_inText, "10"); // TextBox: max_steps_in
 
     // Init controls rectangles
     state.layoutRecs[0] = (Rectangle){state.anchor01.x + 0, state.anchor01.y + 0, 167, 192};   // WindowBox: uniforms_box
