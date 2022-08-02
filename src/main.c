@@ -11,8 +11,16 @@
 #define GUI_UNIFORMS_IMPLEMENTATION
 #include "gui/uniforms_gui.h"
 
-RenderTexture2D target;
-Shader m_s;
+RenderTexture2D render_tex;
+RenderTexture2D pp_1_tex;
+RenderTexture2D blur_tex;
+RenderTexture2D hdr_tex;
+RenderTexture2D gamma_tex;
+Shader render_shader;
+Shader pp_1_shader;
+Shader blur_shader;
+Shader hdr_shader;
+Shader gamma_shader;
 static void get_input(void);
 static void cleanup(void);
 
@@ -37,26 +45,34 @@ int main(int argc, char **argv)
 	int height = 600;
 	atexit(cleanup);
 	video_init(width, height, "Shader");
-	target = LoadRenderTexture(width, height);
-	m_s = LoadShaderFromMemory(basic_shader_vs, basic_shader_fs);
-	uniforms.t_loc = GetShaderLocation(m_s, "t");
+	render_tex = LoadRenderTexture(width, height);
+	pp_1_tex = LoadRenderTexture(width, height);
+	blur_tex = LoadRenderTexture(width, height);
+	hdr_tex = LoadRenderTexture(width, height);
+	gamma_tex = LoadRenderTexture(width, height);
+	render_shader = LoadShaderFromMemory(basic_shader_vs, basic_shader_fs);
+	pp_1_shader = LoadShaderFromMemory(NULL, pp_shader_1_fs);
+	blur_shader = LoadShaderFromMemory(NULL, blur_shader_fs);
+	hdr_shader = LoadShaderFromMemory(NULL, hdr_shader_fs);
+	gamma_shader = LoadShaderFromMemory(NULL, gamma_shader_fs);
+	uniforms.t_loc = GetShaderLocation(render_shader, "t");
 	uniforms.t = 0;
-	uniforms.EPSILON_loc = GetShaderLocation(m_s, "EPSILON");
+	uniforms.EPSILON_loc = GetShaderLocation(render_shader, "EPSILON");
 	uniforms.EPSILON_u = 0.001;
-	uniforms.FARPLANE_loc = GetShaderLocation(m_s, "FARPLANE");
+	uniforms.FARPLANE_loc = GetShaderLocation(render_shader, "FARPLANE");
 	uniforms.FARPLANE_u = 5.0;
-	uniforms.MAX_MARCH_STEPS_loc = GetShaderLocation(m_s, "MAX_MARCH_STEPS");
+	uniforms.MAX_MARCH_STEPS_loc = GetShaderLocation(render_shader, "MAX_MARCH_STEPS");
 	uniforms.MAX_MARCH_STEPS_u = 10;
-	uniforms.pos_loc = GetShaderLocation(m_s, "pos");
+	uniforms.pos_loc = GetShaderLocation(render_shader, "pos");
 	uniforms.pos[0] = 0;
 	uniforms.pos[1] = 0;
 	uniforms.pos[2] = -2.5;
-	SetShaderValue(m_s, uniforms.pos_loc, &uniforms.pos, SHADER_UNIFORM_VEC3);
-	uniforms.view_loc = GetShaderLocation(m_s, "view");
+	SetShaderValue(render_shader, uniforms.pos_loc, &uniforms.pos, SHADER_UNIFORM_VEC3);
+	uniforms.view_loc = GetShaderLocation(render_shader, "view");
 	uniforms.view_u[0] = 0;
 	uniforms.view_u[1] = 0;
 	uniforms.view_u[2] = 1.0;
-	SetShaderValue(m_s, uniforms.view_loc, &uniforms.view_u, SHADER_UNIFORM_VEC3);
+	SetShaderValue(render_shader, uniforms.view_loc, &uniforms.view_u, SHADER_UNIFORM_VEC3);
 	uniforms_gui_state_t state = uniforms_gui_init();
 	state.update = true;
 	while (!WindowShouldClose())
@@ -64,27 +80,64 @@ int main(int argc, char **argv)
 		if (state.update == true)
 		{
 			uniforms.EPSILON_u = strtof(state.epsilon_inText, NULL);
-			SetShaderValue(m_s, uniforms.EPSILON_loc, &uniforms.EPSILON_u, SHADER_UNIFORM_FLOAT);
+			SetShaderValue(render_shader, uniforms.EPSILON_loc, &uniforms.EPSILON_u, SHADER_UNIFORM_FLOAT);
 			uniforms.FARPLANE_u = strtof(state.farplane_inText, NULL);
-			SetShaderValue(m_s, uniforms.FARPLANE_loc, &uniforms.FARPLANE_u, SHADER_UNIFORM_FLOAT);
+			SetShaderValue(render_shader, uniforms.FARPLANE_loc, &uniforms.FARPLANE_u, SHADER_UNIFORM_FLOAT);
 			uniforms.MAX_MARCH_STEPS_u = (int)strtol(state.max_steps_inText, NULL, 10);
-			SetShaderValue(m_s, uniforms.MAX_MARCH_STEPS_loc, &uniforms.MAX_MARCH_STEPS_u, SHADER_UNIFORM_INT);
+			SetShaderValue(render_shader, uniforms.MAX_MARCH_STEPS_loc, &uniforms.MAX_MARCH_STEPS_u, SHADER_UNIFORM_INT);
 			state.update = false;
 		}
-		SetShaderValue(m_s, uniforms.t_loc, &uniforms.t, SHADER_UNIFORM_FLOAT);
+		SetShaderValue(render_shader, uniforms.t_loc, &uniforms.t, SHADER_UNIFORM_FLOAT);
 		uniforms.t += 0.01;
 		get_input();
-		BeginTextureMode(target);
+		BeginTextureMode(render_tex);
 		{
-			ClearBackground(BLACK);
+			BeginShaderMode(render_shader);
+			{
+				DrawTexturePro(gamma_tex.texture, (Rectangle){0, 0, (float)gamma_tex.texture.width, (float)-gamma_tex.texture.height}, (Rectangle){0, 0, (float)GetScreenWidth(), (float)GetScreenHeight()}, (Vector2){0, 0}, 0.0, WHITE);
+			}
+			EndShaderMode();
+		}
+		EndTextureMode();
+		BeginTextureMode(pp_1_tex);
+		{
+			BeginShaderMode(pp_1_shader);
+			{
+				DrawTexturePro(render_tex.texture, (Rectangle){0, 0, (float)render_tex.texture.width, (float)-render_tex.texture.height}, (Rectangle){0, 0, (float)GetScreenWidth(), (float)GetScreenHeight()}, (Vector2){0, 0}, 0.0, WHITE);
+			}
+			EndShaderMode();
+		}
+		BeginTextureMode(blur_tex);
+		{
+			BeginShaderMode(blur_shader);
+			{
+				DrawTexturePro(pp_1_tex.texture, (Rectangle){0, 0, (float)pp_1_tex.texture.width, (float)-pp_1_tex.texture.height}, (Rectangle){0, 0, (float)GetScreenWidth(), (float)GetScreenHeight()}, (Vector2){0, 0}, 0.0, WHITE);
+			}
+			EndShaderMode();
+		}
+		BeginTextureMode(hdr_tex);
+		{
+			BeginShaderMode(hdr_shader);
+			{
+				DrawTexturePro(blur_tex.texture, (Rectangle){0, 0, (float)blur_tex.texture.width, (float)-blur_tex.texture.height}, (Rectangle){0, 0, (float)GetScreenWidth(), (float)GetScreenHeight()}, (Vector2){0, 0}, 0.0, WHITE);
+			}
+			EndShaderMode();
+		}
+		BeginTextureMode(gamma_tex);
+		{
+			BeginShaderMode(gamma_shader);
+			{
+				DrawTexturePro(hdr_tex.texture, (Rectangle){0, 0, (float)hdr_tex.texture.width, (float)-hdr_tex.texture.height}, (Rectangle){0, 0, (float)GetScreenWidth(), (float)GetScreenHeight()}, (Vector2){0, 0}, 0.0, WHITE);
+			}
+			EndShaderMode();
 		}
 		EndTextureMode();
 		BeginDrawing();
 		{
 			ClearBackground(BLACK);
-			BeginShaderMode(m_s);
+			BeginShaderMode(gamma_shader);
 			{
-				DrawTexturePro(target.texture, (Rectangle){0, 0, (float)target.texture.width, (float)-target.texture.height}, (Rectangle){0, 0, (float)GetScreenWidth(), (float)GetScreenHeight()}, (Vector2){0, 0}, 0.0, WHITE);
+				DrawTexturePro(gamma_tex.texture, (Rectangle){0, 0, (float)gamma_tex.texture.width, (float)-gamma_tex.texture.height}, (Rectangle){0, 0, (float)GetScreenWidth(), (float)GetScreenHeight()}, (Vector2){0, 0}, 0.0, WHITE);
 			}
 			EndShaderMode();
 			uniforms_gui_draw(&state);
@@ -104,14 +157,14 @@ static void get_input(void)
 		uniforms.pos[0] += uniforms.view_u[0] * MOV_SPEED;
 		uniforms.pos[1] += uniforms.view_u[1] * MOV_SPEED;
 		uniforms.pos[2] += uniforms.view_u[2] * MOV_SPEED;
-		SetShaderValue(m_s, uniforms.pos_loc, &uniforms.pos, SHADER_UNIFORM_VEC3);
+		SetShaderValue(render_shader, uniforms.pos_loc, &uniforms.pos, SHADER_UNIFORM_VEC3);
 	}
 	else if (IsKeyDown(KEY_S))
 	{
 		uniforms.pos[0] -= uniforms.view_u[0] * MOV_SPEED;
 		uniforms.pos[1] -= uniforms.view_u[1] * MOV_SPEED;
 		uniforms.pos[2] -= uniforms.view_u[2] * MOV_SPEED;
-		SetShaderValue(m_s, uniforms.pos_loc, &uniforms.pos, SHADER_UNIFORM_VEC3);
+		SetShaderValue(render_shader, uniforms.pos_loc, &uniforms.pos, SHADER_UNIFORM_VEC3);
 	}
 	if (IsKeyDown(KEY_A))
 	{
@@ -121,7 +174,7 @@ static void get_input(void)
 		uniforms.view_u[0] = tmp_view.x;
 		uniforms.view_u[1] = tmp_view.y;
 		uniforms.view_u[2] = tmp_view.z;
-		SetShaderValue(m_s, uniforms.view_loc, &uniforms.view_u, SHADER_UNIFORM_VEC3);
+		SetShaderValue(render_shader, uniforms.view_loc, &uniforms.view_u, SHADER_UNIFORM_VEC3);
 	}
 	else if (IsKeyDown(KEY_D))
 	{
@@ -129,13 +182,20 @@ static void get_input(void)
 		uniforms.view_u[0] = tmp_view.x;
 		uniforms.view_u[1] = tmp_view.y;
 		uniforms.view_u[2] = tmp_view.z;
-		SetShaderValue(m_s, uniforms.view_loc, &uniforms.view_u, SHADER_UNIFORM_VEC3);
+		SetShaderValue(render_shader, uniforms.view_loc, &uniforms.view_u, SHADER_UNIFORM_VEC3);
 	}
 }
 
 static void cleanup(void)
 {
-	UnloadShader(m_s);
-	UnloadRenderTexture(target);
+	UnloadShader(render_shader);
+	UnloadShader(pp_1_shader);
+	UnloadShader(blur_shader);
+	UnloadShader(hdr_shader);
+	UnloadShader(gamma_shader);
+	UnloadRenderTexture(render_tex);
+	UnloadRenderTexture(pp_1_tex);
+	UnloadRenderTexture(hdr_tex);
+	UnloadRenderTexture(gamma_tex);
 	CloseWindow();
 }

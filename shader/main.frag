@@ -74,13 +74,13 @@ void main() {
     vec4 color = gamma_correct(get_color(m));
     for(int i = 0; i < 1; i++) {
         if(m.type != SCENE_INVALID) {
-            ray = reflect(ray,m.normal);
-            color = mix(color, gamma_correct(get_color(march(m.point, ray))), 0.3);
+            ray = reflect(ray, m.normal);
+            color += 0.3 * get_color(march(m.point, normalize(ray)));
         } else {
             break;
         }
     }
-    gl_FragColor = color;
+    gl_FragColor =color;
 }
 
 vec4 normal_to_rgb(vec3 v) {

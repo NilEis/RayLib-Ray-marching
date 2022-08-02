@@ -8,6 +8,21 @@ const char basic_shader_fs[] = MAIN_SHADER_fs;
 #define MAIN_SHADER_vs "@MAIN_SHADER_vs@"
 const char basic_shader_vs[] = MAIN_SHADER_vs;
 #undef MAIN_SHADER_vs
-  
+
+#define PP_SHADER_1_fs "@PP_SHADER_1_fs@"
+const char pp_shader_1_fs[] = PP_SHADER_1_fs;
+#undef PP_SHADER_1_fs
+
+#define BLUR_SHADER_fs "@BLUR_SHADER_fs@"
+const char blur_shader_fs[] = BLUR_SHADER_fs;
+#undef BLUR_SHADER_fs
+
+#define HDR_SHADER_fs "@HDR_SHADER_fs@"
+const char hdr_shader_fs[] = HDR_SHADER_fs;
+#undef HDR_SHADER_fs
+
+#define GAMMA_SHADER_fs "@GAMMA_SHADER_fs@"
+const char gamma_shader_fs[] = GAMMA_SHADER_fs;
+#undef GAMMA_SHADER_fs
+
 #endif // SHADER_H
- 
